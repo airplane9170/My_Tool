@@ -16,8 +16,10 @@ import telegram
 # When calling a function, use 'asyncio.run()'!
 async def send_tel_message(message):
 
+    # API
     token_tel_coin = ""
 
+    # Make Group and Post Group Chat id
     chat_id_tel = ""
     
     bot = telegram.Bot(token = token_tel_coin)
