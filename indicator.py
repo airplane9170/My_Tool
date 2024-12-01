@@ -1,42 +1,81 @@
 import numpy as np
-import pandas as pd
 
-# Pivot_High(Dataframe 형태만 가능)
-def calculate_pivot_high(df):
-    """
-    피봇 하이를 계산하는 함수
-    df: DataFrame, 주식 데이터 (열: 'High')
-    """
-    df['Pivot_High'] = np.where(
-        (df['high'] > df['high'].shift(1)) & 
-        (df['high'] > df['high'].shift(-1)) & 
-        (df['high'] > df['high'].shift(-2)) & 
-        (df['high'] > df['high'].shift(-3)),
-        df['high'], np.nan
-    )
-    return df
+# PivotHigh 
+# 출처(PivotHigh, PivotLow): https://toniteifly.tistory.com/65
+def pivothigh(data, left:int, right:int):
+
+    '''
+    Pinescript ta.PivotHigh()와 동일
+    '''
+
+    data['pivothigh'] = 0
+
+    for i in range(left + right, len(data), 1):
+
+        # 범위내 최고점 계산
+        mh = data['high'][i - right - left: i + 1].max()
+
+        # Pivothigh - center의 고가와 범위내 최고점의 비교
+        if data['high'].iat[i - right] == mh:
+            data['pivothigh'].iat[i] = mh
+
+        # 새로운 pivothigh가 출현하지 않을 경우 기존 변곡점 유지
+        else:
+            data['pivothigh'].iat[i] = data['pivothigh'].iat[i - 1]
+
+    return data
+
+# PivotLow
+def pivotlow(data, left:int, right:int):
+    
+    '''
+    Pinescript ta.PivotLow()와 동일
+    '''
+
+    data['pivotlow'] = 0
+
+    for i in range(left + right, len(data), 1):
+
+        # 범위내 최고 및 최저점 계산
+        ml = data['low'][i - right - left: i + 1].min()
+
+        # Pivotlow - center의 저가와 범위내 최저점의 비교
+        if data['low'].iat[i - right] == ml:
+            data['pivotlow'].iat[i] = ml
+
+        # 새로운 pivotlow가 출현하지 않을 경우 기존 변곡점 유지
+        else:
+            data['pivotlow'].iat[i] = data['pivotlow'].iat[i - 1]
+
+    return data
 
 # Bollinger Band(customize)
-def bollinger_bands_customize(org, bb_df, window, num_std, min_width = 0):
+def bollinger_band_customize(bb_df, window, num_std, round_num, min_width = 0):
     
     """
-    Parameters:
+    Parameters
     org(dataframe): Close Data
-    window (int): The period to calculate the moving average.
-    num_std (int): The multiple of the standard deviation.
+    window (int)  : The period to calculate the moving average.
+    num_std (int) : The multiple of the standard deviation.
     min_width(int): Minimum width.
+    round_num(int) : Rounding.
     """
 
     # Moving Average
-    bb_df['Middle Band'] = org['close'].rolling(window=window).mean().round(5)        # Rounding.
+    bb_df['Middle Band'] = bb_df['close'].rolling(window=window).mean()
+    bb_df['Middle Band'] = bb_df['Middle Band'].apply(lambda x: round(x , round_num))
     
     # Standard Deviation
-    bb_df['Standard Deviation'] = org['close'].rolling(window=window).std(ddof=0).round(5)        # Rounding.
+    bb_df['Standard Deviation'] = bb_df['close'].rolling(window=window).std(ddof=0)
+    bb_df['Standard Deviation'] = bb_df['Standard Deviation'].apply(lambda x: round(x , round_num))
     
     # Minimum width.
-    bb_df['Value1'] = (bb_df['Standard Deviation'] * num_std).round(5)      # Rounding.
-    bb_df['Value2'] = (bb_df['Middle Band'] * min_width / 100).round(5)     # Rounding.
-    
+    bb_df['Value1'] = (bb_df['Standard Deviation'] * num_std)
+    bb_df['Value1'] = bb_df['Value1'].apply(lambda x: round(x , round_num))
+
+    bb_df['Value2'] = (bb_df['Middle Band'] * min_width / 100)
+    bb_df['Value2'] = bb_df['Value2'].apply(lambda x: round(x , round_num))
+
     bb_df['Max Value'] = bb_df[['Value1','Value2']].max(axis = 1)
 
     # Upper Band & Lower Band
@@ -46,60 +85,134 @@ def bollinger_bands_customize(org, bb_df, window, num_std, min_width = 0):
     return bb_df
 
 # Bollinger Band
-def bollinger_bands(data, window, num_std):
+def bollinger_band(data, window:int, num_std:float, round_num:int):
     
     """
     Parameters:
-    org(dataframe): Close Data
-    window (int): The period to calculate the moving average.
-    num_std (int): The multiple of the standard deviation.
+    org(dataframe)  : Close Data
+    window          : The period to calculate the moving average.
+    num_std         : The multiple of the standard deviation.
+    round_num       : round()
     """
 
     # Moving Average
-    data['Middle Band'] = data['close'].rolling(window=window).mean().round(5)        # Rounding.
-    
+    data['Middle_Band'] = data['close'].rolling(window=window).mean() # .round(5) 
+    data['Middle_Band'] = data['Middle_Band'].apply(lambda x: round(x , round_num))
+
     # Standard Deviation
-    data['Standard Deviation'] = data['close'].rolling(window=window).std(ddof=0).round(5) * num_std        # Rounding.
+    data['Standard_Deviation'] = data['close'].rolling(window=window).std(ddof=0) * num_std # .round(2)
+    data['Standard_Deviation'] = data['Standard_Deviation'].apply(lambda x: round(x , round_num))
 
     # Upper Band & Lower Band
-    data['Upper Band'] = data['Middle Band'] + data['Standard Deviation']
-    data['Lower Band'] = data['Middle Band'] - data['Standard Deviation']
+    data['Upper_Band'] = data['Middle_Band'] + data['Standard_Deviation']
+    data['Lower_Band'] = data['Middle_Band'] - data['Standard_Deviation']
 
-    # 원하는 return값 적기 
-    return data['Lower Band']
+    return data
+
+# SMA
+def sma(data, length:int, round_num:int):
+
+    '''
+    data(dataframe) : data
+    length          : sma length
+    round_num       : round()
+    '''
+
+    data['SMA'] = data['close'].rolling(window=length).mean()
+    data['SMA'] = data['SMA'].apply(lambda x: round(x , round_num))
+
+    return data
 
 # EMA
-def calculate_ema(data, span):
+def ema(data, length: int, round_num):
 
     '''
-    Parameters:
     data(dataframe): dataframe
-    span(int): ema length
+    length         : ema length
+    round_num      : round()
     '''
-    return data.ewm(span=span, adjust=False).mean().round(1)        # 반올림 조정
+
+    data['ema'] = data.ewm(span=length, adjust=False).mean().round(1)
+    data['ema'] = data['ema'].apply(lambda x: round(x , round_num))
+
+    return data
 
 # RMA
-def calculate_rma(data, span):
+def rma(data, length: int, round_num: int):
 
     '''
     Parameters:
     data(dataframe): dataframe
-    span(int): rma length
+    length         : rma length
+    round_num      : round()
     '''
+
+    data['rma'] = data.ewm(alpha=1/length, adjust=False).mean()
+    data['rma'] = data['rma'].apply(lambda x: round(x , round_num))
         
-    return data.ewm(alpha=1/span, adjust=False).mean().round(1)     # 반올림 조정
+    return data
+
+# HMA
+def hma(df, period: int, round_num: int):
+    
+    '''
+    df(dataframe) : dataframe
+    period        : HMA Length
+    round_num     : round()
+    '''
+
+    # Weighted Moving Average (WMA) 함수
+    def WMA(series, period):
+        weights = np.arange(1, period + 1)
+        return series.rolling(period).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
+
+    # HMA 계산 과정
+    half_period = int(period / 2)
+    sqrt_period = int(np.sqrt(period))
+
+    # 중간 단계의 WMA 계산
+    wma_half_period = WMA(df['close'], half_period)
+    wma_full_period = WMA(df['close'], period)
+
+    # 중간 단계의 값 계산
+    hma_base = 2 * wma_half_period - wma_full_period
+
+    # 최종 HMA 계산
+    HMA = round(WMA(hma_base, sqrt_period), round_num)
+    
+    return HMA
+
+# WMA
+def wma(data, period: int, round_num: int):
+    
+    '''
+    data(dataframe) : dataframe
+    period          : WMA Length
+    round_num       : round()
+    '''
+    series = data['close']
+
+    weights = np.arange(1, period + 1)
+    weighted_sum = np.convolve(series, weights[::-1], mode='valid')
+    wma = weighted_sum / weights.sum()
+    wma = np.round(wma, round_num)
+
+    return np.concatenate([np.full(period - 1, np.nan), wma])
 
 # StopLoss(Test)
 # stoploss_perc: perc사용 시 변수 사용 
-def calculate_stoploss(data, period, atrmul): 
+def atr(data, ma_period: int, round_num: int, ma_source): 
 
     '''
-    Parameters:
     data(dataframe): dataframe
-    period(int): rma length
-    atrmul(int): ATR Multi
-    stoploss_perc: stoploss percentage
+    period         : ma length
+    stoploss_perc  : stoploss percentage
+    round_num      : round()
     '''
+    def wma(series, period):
+        weights = np.arange(1, period + 1)
+        return series.rolling(period).apply(lambda prices: np.dot(prices, weights) / weights.sum(), raw=True)
+
     # StopLoss(ATR)
     data['high_low'] = data['high'] - data['low']
     data['high_close'] = data['high'] - data['close'].shift(1)
@@ -109,21 +222,27 @@ def calculate_stoploss(data, period, atrmul):
 
     true_range = data[['high_low', 'high_close', 'low_close']].max(axis = 1)
 
-    # RMA 계산방식 
-    # data['ATR'] = calculate_rma(true_range, period) 
+    # RMA 계산방식
+    if ma_source == "rma":
+        data['ATR'] = rma(true_range, ma_period, round_num) 
 
     # SMA 계산방식
-    data['ATR'] = true_range.rolling(window=period).mean().round(2)
+    elif ma_source == "sma":
+        data['ATR'] = true_range.rolling(window=ma_period).mean()
+        data['ATR'] = data['ATR'].apply(lambda x: round(x , round_num))
 
-    data['StopLoss_ATR'] = data['close'] - (data['ATR'] * atrmul)
+    # WMA 계산방식 
+    elif ma_source == "wma":
+        data['ATR'] = wma(true_range, ma_period)
+        data['ATR'] = data['ATR'].apply(lambda x: round(x , round_num))
 
     # StopLoss(perc)
     # data['perc'] = (data['close'] - (data['close'] * stoploss_perc / 100)).round(1)     # 반올림 조정
-
+    
     # ATR과 Perc의 최대값 구하기 
     # data['Max StopLoss'] = (data[['stopLoss_ATR', 'perc']].max(axis = 1)).round(1)      # 반올림 조정
 
-    return data['StopLoss_ATR'].round(2)
+    return data['ATR']
 
 # three_black_crows_candle(흑삼병)
 def three_black_crows_candle(data):
@@ -148,8 +267,8 @@ def invert_hammer(data, wu_length = 2, ws_length = 2):
     '''
     Parameters:
     data(dataframe): dataframe
-    wu_length(int): wick_upows_length, 기본값: 2
-    ws_length(int): wick_slows_length, 기본값: 2
+    wu_length(int) : wick_upows_length, 기본값: 2
+    ws_length(int) : wick_slows_length, 기본값: 2
     '''
 
     body_siz = abs(data['open'].iloc[-2] - data['close'].iloc[-2])
@@ -165,7 +284,14 @@ def invert_hammer(data, wu_length = 2, ws_length = 2):
     return invert_hammer
 
 # RSI
-def calculate_RSI(data, period=14):
+def rsi(data, round_num: int, period=14):
+    
+    '''
+    data(dataframe) : dataframe
+    period          : RSI Length
+    round_num       : round()
+    '''
+
     # 가격 변동을 계산
     delta = data['close'].diff()
     delta = delta[1:]
@@ -180,7 +306,7 @@ def calculate_RSI(data, period=14):
 
     # RS와 RSI를 계산
     rs = avg_gain / avg_loss
-    rsi = round(100.0 - (100.0 / (1.0 + rs)), 2)
+    rsi = round(100.0 - (100.0 / (1.0 + rs)), round_num)
     return rsi
 
 # Relative Volume
