@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 import requests
 import yaml
 
-with open('C:\\Users\\airpl\\zoo\\strategy_coin\\info_API.yaml',"r",encoding='UTF-8') as f:
+with open('',"r",encoding='UTF-8') as f:
     info = yaml.load(f, Loader=yaml.FullLoader)
 
 # Discord
