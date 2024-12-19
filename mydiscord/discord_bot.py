@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import yaml
 
-with open('C:\\Users\\airpl\\zoo\\strategy_coin\\info_API.yaml',"r",encoding='UTF-8') as f:
+with open('',"r",encoding='UTF-8') as f:
     info = yaml.load(f, Loader=yaml.FullLoader)
 
 # intents 객체 생성 
