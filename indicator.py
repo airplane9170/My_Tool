@@ -261,28 +261,6 @@ def three_black_crows_candle(data):
     
     return three_black_crows_candle
 
-# invert_hammer(역망치)
-def invert_hammer(data, wu_length = 2, ws_length = 2):
-
-    '''
-    Parameters:
-    data(dataframe): dataframe
-    wu_length(int) : wick_upows_length, 기본값: 2
-    ws_length(int) : wick_slows_length, 기본값: 2
-    '''
-
-    body_siz = abs(data['open'].iloc[-2] - data['close'].iloc[-2])
-
-    # 밑꼬리
-    wick_slows = abs(data['low'].iloc[-2] - data['close'].iloc[-2])
-
-    # 윗꼬리
-    wick_upows = abs(data['high'].iloc[-2] - data['open'].iloc[-2])
-
-    invert_hammer  = (wick_upows > body_siz * wu_length and wick_upows > wick_slows * ws_length) and data['high'].iloc[-2] >= data['high'].iloc[-3]
-
-    return invert_hammer
-
 # RSI
 def rsi(data, round_num: int, period=14):
     
@@ -336,4 +314,40 @@ def emgulfing_candle(data):
     emgulfing_candle = (high > pre_high) & (low < pre_low) & (open > close) & (pre_high > pre2_high) & (pre2_high > pre3_high) & relative_volume(data= data)
 
     return emgulfing_candle
+
+# invert_hammer(역망치)
+def invert_hammer(data, wu_length = 2, ws_length = 2):
+
+    '''
+    Parameters:
+    data(dataframe): dataframe
+    wu_length(int) : wick_upows_length, 기본값: 2
+    ws_length(int) : wick_slows_length, 기본값: 2
+    '''
+
+    body_siz = abs(data['open'].iloc[-2] - data['close'].iloc[-2])
+
+    # 밑꼬리
+    wick_slows = abs(data['low'].iloc[-2] - data['close'].iloc[-2])
+
+    # 윗꼬리
+    wick_upows = abs(data['high'].iloc[-2] - data['open'].iloc[-2])
+
+    invert_hammer  = (wick_upows > body_siz * wu_length and wick_upows > wick_slows * ws_length) and data['high'].iloc[-2] >= data['high'].iloc[-3]
+
+    return invert_hammer
+
+# hammer(망치) + Relative Volume
+def hammer_candle(data):
+    body_size  = np.abs(data['open'] - data['close'])
+    wick_slows = np.abs(data['low'] - data['close'])
+    wick_upows = np.abs(data['high'] - data['open'])
+
+    condition1 = wick_slows > body_size * 2
+    condition2 = wick_upows * 2 < wick_slows
+    condition3 = data['low'].shift(1) >= data['low']
+
+    hammer = (condition1 & condition2) & condition3  & relative_volume(data= data)
+
+    return hammer
 
