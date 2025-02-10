@@ -199,12 +199,12 @@ def wma(data, period: int, round_num: int):
 
     return np.concatenate([np.full(period - 1, np.nan), wma])
 
-# vwap 
-def vwap(data, length:int, round_num:int):
+# vwma
+def vwma(data, length:int, round_num:int):
 
     '''
     data(dataframe) : data
-    length          : vwap length
+    length          : vwma length
     round_num       : round()
     '''
     data['vwv']= data['close'] * data['volume']
@@ -212,10 +212,10 @@ def vwap(data, length:int, round_num:int):
 
     data['vsma'] = data['거래량'].rolling(window=length).mean()
 
-    data['vwap'] = data['vMA'] / data['vsma']
-    data['vwap'] = data['vwap'].apply(lambda x: round(x , round_num))
+    data['vwma'] = data['vMA'] / data['vsma']
+    data['vwma'] = data['vwma'].apply(lambda x: round(x , round_num))
 
-    return data['vwap']
+    return data['vwma']
 
 # StopLoss(Test)
 # stoploss_perc: perc사용 시 변수 사용 
