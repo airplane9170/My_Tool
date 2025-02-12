@@ -109,6 +109,19 @@ def bollinger_band(data, window:int, num_std:float, round_num:int):
 
     return data
 
+# AD Line
+def AD_Line(self, stock_code: str):
+
+    '''
+    지수 종목들 중 하락 종목 대비 상승 종목의 비율
+    '''
+    
+    df = stock.get_market_ohlcv_by_date(self.start_date, self.end_date, stock_code)
+    
+    df['state'] = df.apply(lambda row: 'bullish' if row['시가'] < row['종가'] else ('bearish' if row['시가'] > row['종가'] else 'neutral'), axis=1)
+    
+    return df['state']
+            
 # SMA
 def sma(data, length:int, round_num:int):
 
