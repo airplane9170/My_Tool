@@ -48,7 +48,26 @@ def pivotlow(data, left:int, right:int):
             data['pivotlow'].iat[i] = data['pivotlow'].iat[i - 1]
 
     return data
+    
+# stochastic
+def stochastic(df: DataFrame, k_period: int, d_period: int):
+    """
+    df: DataFrame 
+    k_period: %K 기간 
+    d_period: %D 기간 
+    """
+    # 최저가/최고가 rolling
+    low_min = df['저가'].rolling(window=k_period).min()
+    high_max = df['고가'].rolling(window=k_period).max()
 
+    # %K 계산
+    df['%K'] = round(100 * ((df['종가'] - low_min) / (high_max - low_min)).rolling(window=d_period).mean(), 2)
+
+    # %D 계산 (보통 %K의 이동평균)
+    df['%D'] = round(df['%K'].rolling(window=d_period).mean(), 2)
+
+    return df
+    
 # Bollinger Band(customize)
 def bollinger_band_customize(bb_df, window, num_std, round_num, min_width = 0):
     
