@@ -258,6 +258,8 @@ def atr(data, ma_period: int, round_num: int, ma_source):
     period         : ma length
     stoploss_perc  : stoploss percentage
     round_num      : round()
+
+    주의: data(dataframe)의 시작 지점에 따라 값이 변함
     '''
     def wma(series, period):
         weights = np.arange(1, period + 1)
